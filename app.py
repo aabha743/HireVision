@@ -1,3 +1,10 @@
+import asyncio
+
+try:
+    asyncio.get_running_loop()
+except RuntimeError:
+    asyncio.set_event_loop(asyncio.new_event_loop())
+
 import streamlit as st
 import hirevision
 
@@ -15,13 +22,12 @@ if st.button("Evaluate"):
         try:
             # Extract text from the uploaded resume PDF
             resume_text = hirevision.extract_text_from_pdf(resume_file)
-
-            # Get LLM response
-            llm_response = hirevision.get_llm_response(job_description, resume_text)
+            similarity = hirevision.compute_cosine_similarity(job_description, resume_text)
+            llm_feedback = hirevision.get_llm_response(job_description, resume_text, similarity)
 
             # Display results
             st.subheader("Results")
-            st.markdown(f"**Response:** {llm_response}")
+            st.markdown(f"**Response:** {llm_feedback}")
 
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
