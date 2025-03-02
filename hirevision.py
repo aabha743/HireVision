@@ -1,30 +1,94 @@
 import PyPDF2
-from langchain.llms import Ollama
+from langchain_ollama import OllamaLLM
+from sentence_transformers import SentenceTransformer, util
+import torch
 
-
-#You can replace the model to any other model that you have installed via Ollama
-llm_pipeline = Ollama(base_url="http://localhost:11434", model="falcon3")
+# Load LLM and embedding model
+llm_pipeline = OllamaLLM(base_url="http://localhost:11434", model="llama3.1")
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # Fast & lightweight
 
 def extract_text_from_pdf(pdf_file):
+    """Extract text from a PDF file."""
     reader = PyPDF2.PdfReader(pdf_file)
-    text = "".join(page.extract_text() for page in reader.pages)
-    return text
+    text = "\n".join([page.extract_text() or "" for page in reader.pages]).strip()
+    return text if text else "No text extracted from PDF."
 
-def get_llm_response(job_description, resume_text):
-    #Send JD and resume text to the LLM and return the response.
+def compute_cosine_similarity(job_description, resume_text):
+    """Compute cosine similarity between JD and Resume using BERT embeddings."""
+    if not job_description or not resume_text:
+        return 0.0  # Return 0 similarity for empty inputs
+    
+    jd_embedding = embedding_model.encode(job_description, convert_to_tensor=True)
+    resume_embedding = embedding_model.encode(resume_text, convert_to_tensor=True)
+    
+    similarity_score = util.pytorch_cos_sim(jd_embedding, resume_embedding).squeeze().item()
+    print(round(similarity_score,2))
+    return round(similarity_score, 2)
+
+def get_llm_response(job_description, resume_text, similarity_score):
+    """Generate LLM-based suitability score with explanation, considering cosine similarity."""
     prompt = (
-        "As a recruiter, your task is to match the provided Job Description with the candidate's Resume, "
-        "rank the candidate's suitability for the role on a scale from 0 to 10, and provide a brief explanation "
-        "justifying the score based on the alignment of skills, experience, and qualifications.\n"
-        f"Job Description: {job_description}\n"
-        f"Resume: {resume_text}"
+        "As a recruiter, analyze the provided Job Description and Resume.\n"
+        f"Cosine similarity score: {similarity_score} (0 to 1, higher means better match).\n"
+        "Now, rate the candidate's suitability for this role on a scale from 0 to 10 and provide an explanation "
+        "justifying the score based on skills, experience, and qualifications.\n\n"
+        f"Job Description:\n{job_description}\n\n"
+        f"Resume:\n{resume_text}"
     )
-    response = llm_pipeline(prompt)  
+    
+    response = llm_pipeline.invoke(prompt)  # FIX: Use invoke() instead of calling LLM directly
     return response
 
+# Example usage:
+# resume_text = extract_text_from_pdf("resume.pdf")
+# jd_text = "Your job description here"
+# similarity = compute_cosine_similarity(jd_text, resume_text)
+# llm_feedback = get_llm_response(jd_text, resume_text, similarity)
+# print("LLM Feedback:", llm_feedback)
+import PyPDF2
+from langchain_ollama import OllamaLLM
+from sentence_transformers import SentenceTransformer, util
+import torch
 
-#Incase you want to just test whetehr the model you are trying to run is working of not, un-comment the below lines and run them to check for any errors
-#text = extract_text_from_pdf(r"C:\Users\aabha\Downloads\Devansh_Soni_s_CV.pdf")
-#jd = "We are seeking a skilled and innovative AI Engineer to join our dynamic team. The ideal candidate will be responsible for designing, developing, and implementing AI models and algorithms to solve complex business problems. You will collaborate closely with data scientists, software engineers, and product teams to integrate machine learning solutions into production systems. Key responsibilities include building and optimizing machine learning models, conducting experiments to improve model performance, and deploying AI-driven applications. Strong expertise in programming languages such as Python, deep learning frameworks like TensorFlow or PyTorch, and a solid understanding of data structures, algorithms, and cloud platforms is essential. The ideal candidate should also have excellent problem-solving skills, a passion for AI technologies, and a collaborative mindset."
-#response = get_llm_response(jd,text)
-#print(response)
+# Load LLM and embedding model
+llm_pipeline = OllamaLLM(base_url="http://localhost:11434", model="llama3.1")
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")  # Fast & lightweight
+
+def extract_text_from_pdf(pdf_file):
+    """Extract text from a PDF file."""
+    reader = PyPDF2.PdfReader(pdf_file)
+    text = "\n".join([page.extract_text() or "" for page in reader.pages]).strip()
+    return text if text else "No text extracted from PDF."
+
+def compute_cosine_similarity(job_description, resume_text):
+    """Compute cosine similarity between JD and Resume using BERT embeddings."""
+    if not job_description or not resume_text:
+        return 0.0  # Return 0 similarity for empty inputs
+    
+    jd_embedding = embedding_model.encode(job_description, convert_to_tensor=True)
+    resume_embedding = embedding_model.encode(resume_text, convert_to_tensor=True)
+    
+    similarity_score = util.pytorch_cos_sim(jd_embedding, resume_embedding).squeeze().item()
+    print(round(similarity_score,2))
+    return round(similarity_score, 2)
+
+def get_llm_response(job_description, resume_text, similarity_score):
+    """Generate LLM-based suitability score with explanation, considering cosine similarity."""
+    prompt = (
+        "As a recruiter, analyze the provided Job Description and Resume.\n"
+        f"Cosine similarity score: {similarity_score} (0 to 1, higher means better match).\n"
+        "Now, rate the candidate's suitability for this role on a scale from 0 to 10 and provide an explanation "
+        "justifying the score based on skills, experience, and qualifications.\n\n"
+        f"Job Description:\n{job_description}\n\n"
+        f"Resume:\n{resume_text}"
+    )
+    
+    response = llm_pipeline.invoke(prompt)  # FIX: Use invoke() instead of calling LLM directly
+    return response
+
+# Example usage:
+# resume_text = extract_text_from_pdf("resume.pdf")
+# jd_text = "Your job description here"
+# similarity = compute_cosine_similarity(jd_text, resume_text)
+# llm_feedback = get_llm_response(jd_text, resume_text, similarity)
+# print("LLM Feedback:", llm_feedback)
