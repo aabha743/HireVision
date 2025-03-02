@@ -18,9 +18,10 @@ Before running the project, ensure that you have the following libraries install
 
 - Python 3.x
 - `PyPDF2` for PDF text extraction
-- Ollama and the falcon3 model or any other model of your liking, but make sure you change the model you've used in the hirevision.py file.
+- Ollama and the llama3.1 model or any other model of your liking, but make sure you change the model you've used in the hirevision.py file.
 - Streamlit for the interface
 - LangChain , as we are utilising the model downloaded via Ollama through LangChain.
+- Sentence Transformers library to calculate the cosine scores.
 
 Install the required Python dependencies via `pip` after cloning the repository:
 
