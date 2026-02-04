@@ -2,7 +2,7 @@
 
 Welcome to **HireVision**, a powerful prototype project built to explore applied GenAI workflows for document analysis and is designed to help job seekers assess how well their resumes align with job descriptions (JDs). This project extracts key information from your resume and compares it to the job description you're applying for, providing a suitability score from 0 to 10, along with a brief explanation justifying the score.
 
-The goal of HireVision is to help candidates understand how their qualifications match the job's expectations and improve their chances of landing an interview.
+The goal of HireVision is to help candidates understand how their qualifications match the job's expectations and improve their chances of landing an interview. I’m open to building similar prototype tools for document analysis or internal workflows.
 
 ## Features
 
@@ -27,6 +27,7 @@ Install the required Python dependencies via `pip` after cloning the repository:
 
 ```bash
 pip install -r requirements.txt
+
 
 
 
